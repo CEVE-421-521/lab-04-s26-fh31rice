@@ -234,6 +234,7 @@ end
 *The histogram in @fig-one-surge shows two clusters of damage values for a single surge height.
 Why does the same surge produce different damage amounts?
 What physical mechanism in the ICOW model creates this pattern?*
+Ans: In reality, the same storm do not always cause same damage. For the same surge and dike height, sometimes the dike may fail, sometimes it may not. ICOW modeled this probabilistically. So, the left bar count is high, that means, dike didn't fail and the damage is also low as dike didn't fail. But the right bar is high that means, the dike failed and damage is high. (ICOW first compute probability of failure, and then randomly decides if the dike fails using that probability)
 :::
 
 
@@ -298,9 +299,9 @@ end
 ::: {.callout-tip appearance="simple" icon=false title="Question 2"}
 *Look at the scatter plot in @fig-stochastic.
 You should see two "branches" — one where the dike holds and one where it fails.
-At what surge height do the branches merge (the dike always fails)?
+At what surge height do the branches merge (the dike always fails)? Ans: The merging point is 6m, where the low damage loss flat curve dissapears, because after that point, dike always fails.
 Also: notice how few samples appear in the high-damage tail of the histogram.
-What does this tell you about the efficiency of naive Monte Carlo for estimating tail risk?*
+What does this tell you about the efficiency of naive Monte Carlo for estimating tail risk?*Ans: Monte carlo is a random sampling.That means, it always is drawing samples in the part of not failing, rather than extreme cases of failing. That's why the count in low damages is high. So, in one word, the schochastic simulation will have noise.
 :::
 
 
@@ -326,7 +327,7 @@ DataFrame(
 ::: {.callout-tip appearance="simple" icon=false title="Question 3"}
 *A city planner says: "Our expected annual damage is \$X billion, so we should budget \$X billion per year for flood recovery."
 What's wrong with this reasoning?
-Use the damage distribution in @fig-stochastic to support your answer.*
+Use the damage distribution in @fig-stochastic to support your answer.* Ans: The statistics show that the probability of damage over 10B is 10.2%, that means once in a 10 year, the damage can go above 10B. So, if you consider only the mean annual damage, that will not be right approach. Also the histogram shows, for some year, the damage may go very large although those events may be rare. So, if you consider only the mean EAD per year, most of the year you may survive, but for extreme years, your budget will be low.
 :::
 
 
@@ -380,7 +381,7 @@ Both methods estimate the same quantity (expected annual damage) — the stochas
 
 ::: {.callout-tip appearance="simple" icon=false title="Question 4"}
 *Why don't the stochastic mean and EAD match exactly?
-Which one would you trust more for a policy decision, and why?*
+Which one would you trust more for a policy decision, and why?* Ans: In schochastic mean determintation, as it is random, sample may be missed from the rare events. So there will be sampling error. But EAD integrates over all surge probabilities, so we are using the distribution, not the chance. The difference in the value may be because the monte carlo schochastic sampling is just 500 times, but for having less noisy mean, we need more sampling. We will trust the EAD more, as it doesn't have sample noise, can capture rare extreme events, and integrate over probability.
 :::
 
 
@@ -443,8 +444,8 @@ DataFrame(
 ```
 
 ::: {.callout-tip appearance="simple" icon=false title="Question 5"}
-*How did increasing the shape parameter (fatter tails) affect the EAD?
-Why might the stochastic estimate be less reliable when the distribution has fatter tails?*
+*How did increasing the shape parameter (fatter tails) affect the EAD? Ans: Fatter tail means, the extreme surges are more likely and that's why the dike may fail. So the rare events dominates the average, that's why for fatter tail, the average increased. 
+Why might the stochastic estimate be less reliable when the distribution has fatter tails?*Ans: The schochastic events may not draw from the rare events of the fat tails, that eventually will make the average go down. But for the EAD integration, this noisy samples problem are overcome. That's why schochastic simulation in fat tails is not a great method to choose.
 :::
 
 
@@ -482,9 +483,9 @@ DataFrame(
 ```
 
 ::: {.callout-tip appearance="simple" icon=false title="Question 6"}
-*How much did 0.5m of sea-level rise increase the EAD?
-Is the increase proportional to the SLR amount?
-What does this tell you about the relationship between sea-level rise and flood risk?*
+*How much did 0.5m of sea-level rise increase the EAD? Ans: By 34%.
+Is the increase proportional to the SLR amount? Ans: The physical change in water level is just 0.5m, but the damage is inbcreased by 34% which is huge. So it is not proportional. That means, sea level rise pushes more storms over the threshold limits and increase the dike failure probability and dike failure, ultimately increasing the loss.
+What does this tell you about the relationship between sea-level rise and flood risk?* Ans: Flood risk increase non linearly with sea level rise.
 :::
 
 
@@ -493,15 +494,15 @@ What does this tell you about the relationship between sea-level rise and flood 
 Now it's your turn — use the city parameters you estimated on Wednesday.
 Replace the placeholder values for `H_city`, `D_city`, `W_city`, and `H_seawall` with your city's values, then run EAD to compare against Manhattan.
 
-See the [ICOW parameter documentation](https://dossgollin-lab.github.io/ICOW.jl/equations.html#parameters) for the full list of parameters you can change — try adjusting others beyond the four listed here.
+See the [ICOW parameter documentation](https://dossgollin-lab.github.io/ICOW.jl/equations.html#parameters) for the full list of parameters you can change — try adjusting others beyond the four listed here. (a)H_city=total elevation change from the seawall to the highest point of the city (b) D_city = horizontal distance from the seawall to the highest point of the city, (c) W_city = length of the coastline along which the seawall and dike are built, H_seawall= height of the existing seawall, surges below this cause no flooding.
 
 ```{julia}
 #| output: false
 my_config = StochasticConfig(
-    H_city=10.0,
-    D_city=1500.0,
-    W_city=30000.0,
-    H_seawall=1.0
+    H_city=12.0,
+    D_city=30000.0,
+    W_city=60000.0,
+    H_seawall=5.0
 )
 my_ead_config = EADConfig(
     n_years=1,
@@ -519,7 +520,7 @@ ead_my = SimOptDecisions.value(outcome_my.expected_damage)
 #| label: tbl-my-city
 #| tbl-cap: "Your city's baseline risk compared to Manhattan"
 DataFrame(
-    City=["Manhattan (default)", "Your city"],
+    City=["Manhattan (default)", "Sanghai"],
     EAD=[
         "\$$(round(ead_quadrature / 1e9; digits=3))B",
         "\$$(round(ead_my / 1e9; digits=3))B"
@@ -529,7 +530,7 @@ DataFrame(
 
 ::: {.callout-tip appearance="simple" icon=false title="Question 7"}
 *How does your city's baseline risk compare to Manhattan's?
-What features of your city's geometry (elevation, coastline length, seawall height) explain the difference?*
+What features of your city's geometry (elevation, coastline length, seawall height) explain the difference?* Ans: My chosen city is Sanghai, the seawall average height seems to be 5m in that city, which is large, that's why the EAD loss is very low than Manhatton.
 :::
 
 
@@ -539,8 +540,8 @@ If you finish early, try one of these extensions:
 
 - **VaR and CVaR**: Compute the 95th percentile damage (Value at Risk) and the average of damages exceeding that threshold (Conditional Value at Risk) from the stochastic samples
 - **Damage function**: For each surge height from 0 to 15m (in 0.1m steps), compute the expected damage. Plot the resulting damage function
-- **No defenses**: Try a true do-nothing policy (`a_frac=0.0`) — how does the scatter plot change? (Hint: what happens to the two branches?)
-- **Stronger dike**: Try `a_frac=0.3` — does doubling the dike height halve the EAD?
+- **No defenses**: Try a true do-nothing policy (`a_frac=0.0`) — how does the scatter plot change? (Hint: what happens to the two branches?) Ans: With a_frac=0.0, the damage histogram from 0 to 100, goes more dense. Say 0 to 10B dollar damage has 200 counts, 10 to 20 has 125 counts, 20 to 30 has 75 counts etc.
+- **Stronger dike**: Try `a_frac=0.3` — does doubling the dike height halve the EAD? Ans: Doubling the dike hike will not halve the EAD, because dike falling depends on many parameters. And also doubling height doesn't change the highest loss than occur from primary dike. The low to medium loss may be reduced due to doubling. But ultimately, doubling will not make EAD halve.
 
 ## Summary
 
@@ -554,62 +555,62 @@ Key takeaways from this lab:
 ## Your Answers {.unnumbered}
 
 Write your answers in the spaces below.
-Each question references a specific section above — scroll up to review the context if needed.
+Each question references a specific section above — scroll up to review the context if needed. Ans: All the answers are written to it's individual subsections.
 
 ### Question 1 (Section 4: One Storm) {.unnumbered}
 
-*The histogram shows two clusters of damage values for a single surge height. Why does the same surge produce different damage amounts? What physical mechanism in the ICOW model creates this pattern?*
+All question answers are already written to the individual subsection above.
 
 ::: {.callout-tip appearance="simple" icon=false title="Your Answer"}
-*Replace this text with your answer.*
+
 :::
 
 ### Question 2 (Section 5: Many Storms) {.unnumbered}
+All question answers are written to the individual subsection above.
 
-*Look at the scatter plot. You should see two "branches" — one where the dike holds and one where it fails. At what surge height do the branches merge? Also: what does the sparse sampling in the high-damage tail tell you about Monte Carlo efficiency?*
 
 ::: {.callout-tip appearance="simple" icon=false title="Your Answer"}
-*Replace this text with your answer.*
+
 :::
 
 ### Question 3 (Section 5: Risk Statistics) {.unnumbered}
 
-*A city planner says: "Our expected annual damage is \$X billion, so we should budget \$X billion per year for flood recovery." What's wrong with this reasoning?*
+
 
 ::: {.callout-tip appearance="simple" icon=false title="Your Answer"}
-*Replace this text with your answer.*
+
 :::
 
 ### Question 4 (Section 6: EAD Mode) {.unnumbered}
 
-*Why don't the stochastic mean and EAD match exactly? Which one would you trust more for a policy decision, and why?*
+
 
 ::: {.callout-tip appearance="simple" icon=false title="Your Answer"}
-*Replace this text with your answer.*
+
 :::
 
 ### Question 5 (Section 7: Fat Tails) {.unnumbered}
 
-*How did increasing the shape parameter (fatter tails) affect the EAD? Why might the stochastic estimate be less reliable when the distribution has fatter tails?*
+
 
 ::: {.callout-tip appearance="simple" icon=false title="Your Answer"}
-*Replace this text with your answer.*
+
 :::
 
 ### Question 6 (Section 7: Sea-Level Rise) {.unnumbered}
 
-*How much did 0.5m of sea-level rise increase the EAD? Is the increase proportional to the SLR amount?*
+
 
 ::: {.callout-tip appearance="simple" icon=false title="Your Answer"}
-*Replace this text with your answer.*
+
 :::
 
 ### Question 7 (Section 7: Your City) {.unnumbered}
 
-*How does your city's baseline risk compare to Manhattan's? What features of your city's geometry explain the difference?*
+
 
 ::: {.callout-tip appearance="simple" icon=false title="Your Answer"}
-*Replace this text with your answer.*
+
 :::
 
 ## Submission {#sec-submission}
